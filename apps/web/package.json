@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@agenttoruk/agent-engine": "*",
     "@agenttoruk/database": "*",
     "@agenttoruk/shared": "*",
     "bcryptjs": "^3.0.3",

@@ -94,7 +94,8 @@ agenttoruk/
 
 - [x] Phase 0 — Monorepo scaffold, schema, admin shell, widget stub
 - [x] Phase 2 — Authentication + RBAC
-- [ ] Phase 6 — Agent orchestrator + OpenAI/Gemini
+- [x] Phase 5 — Conversations API + history
+- [ ] Phase 6 — Agent orchestrator enhancements
 - [ ] Phase 7 — RAG ingestion + search
 - [ ] Phase 9 — Ticketing module
 - [ ] Phase 10 — Human handoff + realtime

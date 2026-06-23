@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { prisma } from "@agenttoruk/database";
 import type { WidgetThemeConfig } from "@agenttoruk/shared";
+import { corsHeaders, jsonWithCors, optionsCors } from "@/lib/cors";
 
 const DEFAULT_CONFIG: WidgetThemeConfig = {
   welcomeMessage: "Hi! How can I help you today?",
@@ -26,17 +27,61 @@ const DEFAULT_CONFIG: WidgetThemeConfig = {
   showPoweredBy: true,
 };
 
+export async function OPTIONS() {
+  return optionsCors();
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const org = searchParams.get("org");
 
   if (!org) {
-    return NextResponse.json({ error: "org parameter required" }, { status: 400 });
+    return jsonWithCors({ error: "org parameter required" }, { status: 400 });
   }
 
-  // TODO: Load from WidgetTheme table by organizationId (Phase 11)
-  return NextResponse.json({
-    ...DEFAULT_CONFIG,
-    organizationId: org,
+  const theme = await prisma.widgetTheme.findFirst({
+    where: { organizationId: org },
+    include: {
+      organization: {
+        select: { agentConfig: { select: { name: true } } },
+      },
+    },
+  });
+
+  if (!theme) {
+    const exists = await prisma.organization.findUnique({ where: { id: org } });
+    if (!exists) {
+      return jsonWithCors({ error: "Invalid organization" }, { status: 404 });
+    }
+    return jsonWithCors({ ...DEFAULT_CONFIG, organizationId: org });
+  }
+
+  const config: WidgetThemeConfig = {
+    welcomeMessage: theme.welcomeMessage,
+    position: theme.position,
+    themeMode: theme.themeMode.toLowerCase() as WidgetThemeConfig["themeMode"],
+    allowUserThemeToggle: theme.allowUserThemeToggle,
+    light: {
+      primary: theme.lightPrimary,
+      background: theme.lightBackground,
+      text: theme.lightText,
+      agentBubble: theme.lightAgentBubble,
+      userBubble: theme.lightUserBubble,
+    },
+    dark: {
+      primary: theme.darkPrimary,
+      background: theme.darkBackground,
+      text: theme.darkText,
+      agentBubble: theme.darkAgentBubble,
+      userBubble: theme.darkUserBubble,
+    },
+    fontFamily: theme.fontFamily,
+    fontSize: theme.fontSize,
+    borderRadius: theme.borderRadius,
+    showPoweredBy: theme.showPoweredBy,
+  };
+
+  return jsonWithCors(config, {
+    headers: corsHeaders,
   });
 }

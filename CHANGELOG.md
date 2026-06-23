@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-06-23
+
+### Added
+
+- Conversation persistence (create, list, detail, update status)
+- Message API for widget and admin human replies
+- Public widget API (`/api/v1/conversations`) with CORS
+- Admin conversations list with search and status filters
+- Conversation detail page with message thread and agent reply
+- Widget connected to real backend API
+- Widget demo page at `/widget-demo`
+- Dashboard shows live conversation stats and recent chats
+- Optional AI responses when OpenAI/Gemini API key is configured
+
 ## [0.2.0] - 2026-06-23
 
 ### Added

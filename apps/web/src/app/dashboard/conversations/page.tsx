@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/layout/page-header";
+import { ConversationsList } from "@/components/conversations/conversations-list";
 
 export default function ConversationsPage() {
   return (
@@ -7,9 +8,7 @@ export default function ConversationsPage() {
         title="Conversations"
         description="View and manage all customer chat sessions."
       />
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-12 text-center text-sm text-[var(--muted)]">
-        No conversations yet. Coming in Phase 5.
-      </div>
+      <ConversationsList />
     </div>
   );
 }

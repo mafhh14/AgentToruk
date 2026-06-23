@@ -3,13 +3,15 @@ import { ChatWidget } from "./widget";
 function bootstrap(): void {
   const script = document.currentScript as HTMLScriptElement | null;
   const orgId = script?.getAttribute("data-org");
+  const apiUrl =
+    script?.getAttribute("data-api-url") ?? window.location.origin;
 
   if (!orgId) {
     console.error("[AgentToruk] Missing data-org attribute on widget script");
     return;
   }
 
-  const widget = new ChatWidget(orgId);
+  const widget = new ChatWidget(orgId, apiUrl);
   widget.init();
 
   (window as unknown as { AgentToruk?: { destroy: () => void } }).AgentToruk = {

@@ -38,6 +38,17 @@ export default async function SettingsPage() {
         </section>
 
         <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6">
+          <h2 className="font-semibold">Widget</h2>
+          <p className="mt-2 text-sm text-[var(--muted)]">
+            Customize colors, welcome message, and layout in the{" "}
+            <a href="/dashboard/widget" className="text-blue-600 hover:underline">
+              widget theme editor
+            </a>
+            .
+          </p>
+        </section>
+
+        <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6">
           <h2 className="font-semibold">Widget embed code</h2>
           <p className="mt-1 text-sm text-[var(--muted)]">
             Add this script to your website to enable the chat widget.

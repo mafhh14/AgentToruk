@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-06-23
+
+### Added
+
+- Widget theme editor at `/dashboard/widget` with live preview
+- Admin API to get, update, and reset widget theme per organization
+- Color pickers for light/dark palettes, position, welcome message, border radius
+- Sidebar link and settings cross-link to theme editor
+
 ## [0.7.0] - 2026-06-23
 
 ### Added

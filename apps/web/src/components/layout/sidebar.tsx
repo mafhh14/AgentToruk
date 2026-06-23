@@ -5,29 +5,38 @@ import {
   BookOpen,
   Bot,
   LayoutDashboard,
+  LogOut,
   MessageSquare,
   Settings,
   Ticket,
   Users,
   Workflow,
 } from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { formatRole, hasPermission } from "@/lib/rbac";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/dashboard/conversations", label: "Conversations", icon: MessageSquare },
-  { href: "/dashboard/tickets", label: "Tickets", icon: Ticket },
-  { href: "/dashboard/knowledge", label: "Knowledge", icon: BookOpen },
-  { href: "/dashboard/agent", label: "Agent", icon: Bot },
-  { href: "/dashboard/workflows", label: "Workflows", icon: Workflow },
-  { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/dashboard/team", label: "Team", icon: Users },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: "dashboard:read" as const },
+  { href: "/dashboard/conversations", label: "Conversations", icon: MessageSquare, permission: "conversations:read" as const },
+  { href: "/dashboard/tickets", label: "Tickets", icon: Ticket, permission: "tickets:read" as const },
+  { href: "/dashboard/knowledge", label: "Knowledge", icon: BookOpen, permission: "knowledge:read" as const },
+  { href: "/dashboard/agent", label: "Agent", icon: Bot, permission: "agent:read" as const },
+  { href: "/dashboard/workflows", label: "Workflows", icon: Workflow, permission: "workflows:read" as const },
+  { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3, permission: "analytics:read" as const },
+  { href: "/dashboard/team", label: "Team", icon: Users, permission: "team:read" as const },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings, permission: "settings:read" as const },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+
+  const role = session?.user?.role;
+  const visibleNav = navItems.filter(
+    (item) => role && hasPermission(role, item.permission),
+  );
 
   return (
     <aside className="flex w-64 flex-col border-r border-slate-800 bg-[var(--sidebar)] text-[var(--sidebar-foreground)]">
@@ -36,7 +45,7 @@ export function Sidebar() {
         <span className="font-semibold">AgentToruk</span>
       </div>
       <nav className="flex-1 space-y-1 p-4">
-        {navItems.map((item) => {
+        {visibleNav.map((item) => {
           const active =
             pathname === item.href ||
             (item.href !== "/dashboard" && pathname.startsWith(item.href));
@@ -58,9 +67,23 @@ export function Sidebar() {
         })}
       </nav>
       <div className="border-t border-slate-800 p-4">
-        <div className="rounded-lg bg-slate-800/50 px-3 py-2 text-xs text-slate-400">
-          Acme Inc · Owner
+        <div className="rounded-lg bg-slate-800/50 px-3 py-2">
+          <p className="truncate text-sm font-medium text-white">
+            {session?.user?.organizationName ?? "Organization"}
+          </p>
+          <p className="truncate text-xs text-slate-400">
+            {session?.user?.name ?? session?.user?.email}
+            {session?.user?.role && ` · ${formatRole(session.user.role)}`}
+          </p>
         </div>
+        <button
+          type="button"
+          onClick={() => signOut({ callbackUrl: "/login" })}
+          className="mt-3 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-400 hover:bg-slate-800 hover:text-white"
+        >
+          <LogOut className="h-4 w-4" />
+          Sign out
+        </button>
       </div>
     </aside>
   );

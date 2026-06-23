@@ -93,7 +93,7 @@ agenttoruk/
 ## Roadmap
 
 - [x] Phase 0 — Monorepo scaffold, schema, admin shell, widget stub
-- [ ] Phase 2 — Authentication + RBAC
+- [x] Phase 2 — Authentication + RBAC
 - [ ] Phase 6 — Agent orchestrator + OpenAI/Gemini
 - [ ] Phase 7 — RAG ingestion + search
 - [ ] Phase 9 — Ticketing module

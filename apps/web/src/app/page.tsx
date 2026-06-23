@@ -12,16 +12,16 @@ export default function HomePage() {
         </div>
         <div className="flex items-center gap-3">
           <Link
-            href="/login"
+            href="/register"
             className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300"
           >
-            Sign in
+            Sign up
           </Link>
           <Link
-            href="/dashboard"
+            href="/login"
             className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
           >
-            Open dashboard
+            Sign in
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
@@ -45,7 +45,7 @@ export default function HomePage() {
           </p>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <Link
-              href="/dashboard"
+              href="/register"
               className="rounded-xl bg-blue-600 px-6 py-3 font-medium text-white hover:bg-blue-700"
             >
               Get started

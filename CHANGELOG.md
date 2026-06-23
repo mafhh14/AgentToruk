@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-06-23
+
+### Added
+
+- NextAuth.js credentials authentication (email/password)
+- Organization registration with automatic bootstrap (AgentConfig, WidgetTheme)
+- JWT sessions with organization ID and role
+- RBAC permission system (Owner, Admin, Support Agent, Viewer)
+- Protected dashboard routes via middleware
+- Team API: list members and invite users
+- Login and register pages with form validation
+- Sidebar shows org, user, role, and sign out
+
 ## [0.1.0] - 2026-06-23
 
 ### Added

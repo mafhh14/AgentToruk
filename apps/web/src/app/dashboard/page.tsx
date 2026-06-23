@@ -7,6 +7,7 @@ import {
   getConversationStats,
   listConversations,
 } from "@/lib/conversations/service";
+import { getTicketStats } from "@/lib/tickets/service";
 import { getSession } from "@/lib/session";
 import {
   ArrowUpRight,
@@ -23,9 +24,10 @@ export default async function DashboardPage() {
   if (!session?.user?.organizationId) redirect("/login");
 
   const orgId = session.user.organizationId;
-  const [stats, recent] = await Promise.all([
+  const [stats, recent, ticketStats] = await Promise.all([
     getConversationStats(orgId),
     listConversations(orgId, { limit: 5 }),
+    getTicketStats(orgId),
   ]);
 
   const statCards = [
@@ -43,9 +45,9 @@ export default async function DashboardPage() {
     },
     {
       label: "Open tickets",
-      value: "0",
+      value: String(ticketStats.open),
       icon: Ticket,
-      change: "Phase 9",
+      change: `${ticketStats.inProgress} in progress`,
     },
     {
       label: "CSAT score",

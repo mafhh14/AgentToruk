@@ -97,7 +97,8 @@ agenttoruk/
 - [x] Phase 5 — Conversations API + history
 - [x] Phase 6 — Agent orchestrator (intent, tools, guardrails)
 - [x] Phase 7 — RAG ingest + search
-- [ ] Phase 9 — Ticketing module (full UI)
+- [x] Phase 9 — Ticketing module (full UI)
+- [ ] Phase 10 — Human handoff + Socket.io realtime
 - [ ] Phase 7 — RAG ingestion + search
 - [ ] Phase 9 — Ticketing module
 - [ ] Phase 10 — Human handoff + realtime

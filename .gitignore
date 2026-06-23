@@ -38,5 +38,4 @@ coverage/
 # Prisma
 packages/database/prisma/migrations/**/migration_lock.toml
 
-# Uploads
 uploads/

@@ -96,7 +96,8 @@ agenttoruk/
 - [x] Phase 2 — Authentication + RBAC
 - [x] Phase 5 — Conversations API + history
 - [x] Phase 6 — Agent orchestrator (intent, tools, guardrails)
-- [ ] Phase 7 — RAG ingest + search
+- [x] Phase 7 — RAG ingest + search
+- [ ] Phase 9 — Ticketing module (full UI)
 - [ ] Phase 7 — RAG ingestion + search
 - [ ] Phase 9 — Ticketing module
 - [ ] Phase 10 — Human handoff + realtime

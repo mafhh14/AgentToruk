@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-06-23
+
+### Added
+
+- Full pgvector RAG pipeline: chunking, OpenAI embeddings, similarity search
+- Knowledge upload API (PDF, TXT, MD files + URLs)
+- Document list, delete, and re-index in admin UI
+- Text extraction from PDF and web pages
+- Agent `search_knowledge_base` tool now returns real citations when docs are indexed
+
 ## [0.4.0] - 2026-06-23
 
 ### Added

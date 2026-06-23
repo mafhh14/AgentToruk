@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@agenttoruk/database": "*",
     "@agenttoruk/shared": "*"
   },
   "devDependencies": {

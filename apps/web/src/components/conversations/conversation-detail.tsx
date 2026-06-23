@@ -20,6 +20,14 @@ interface Message {
   content: string;
   createdAt: string;
   confidence?: number | null;
+  sources?: Array<{ documentName: string; content: string; score: number }> | null;
+  metadata?: {
+    intent?: string;
+    sentiment?: string;
+    urgency?: string;
+    actionsTaken?: string[];
+    handoffReason?: string;
+  } | null;
 }
 
 interface ConversationDetail {
@@ -210,9 +218,19 @@ export function ConversationDetailView({
                   msg.role === "USER" ? "items-end" : "items-start"
                 }`}
               >
-                <div className="mb-1 flex items-center gap-2 text-xs text-[var(--muted)]">
+                <div className="mb-1 flex flex-wrap items-center gap-2 text-xs text-[var(--muted)]">
                   <span>{roleLabel(msg.role)}</span>
                   <span>{formatMessageTime(msg.createdAt)}</span>
+                  {msg.confidence != null && msg.role === "ASSISTANT" && (
+                    <span className="rounded bg-slate-200 px-1.5 py-0.5 dark:bg-slate-700">
+                      {Math.round(msg.confidence * 100)}% confidence
+                    </span>
+                  )}
+                  {msg.metadata?.intent && msg.role === "ASSISTANT" && (
+                    <span className="rounded bg-blue-100 px-1.5 py-0.5 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
+                      {msg.metadata.intent}
+                    </span>
+                  )}
                 </div>
                 <div
                   className={`max-w-[80%] rounded-xl px-4 py-2 text-sm ${
@@ -225,6 +243,21 @@ export function ConversationDetailView({
                 >
                   {msg.content}
                 </div>
+                {msg.metadata?.actionsTaken && msg.metadata.actionsTaken.length > 0 && (
+                  <p className="mt-1 text-xs text-[var(--muted)]">
+                    Actions: {msg.metadata.actionsTaken.join(", ")}
+                  </p>
+                )}
+                {msg.sources && msg.sources.length > 0 && (
+                  <div className="mt-1 max-w-[80%] rounded-lg border border-[var(--border)] p-2 text-xs text-[var(--muted)]">
+                    <p className="font-medium text-[var(--foreground)]">Sources</p>
+                    {msg.sources.map((s, i) => (
+                      <p key={i} className="mt-1">
+                        [{i + 1}] {s.documentName}
+                      </p>
+                    ))}
+                  </div>
+                )}
               </div>
             ))
           )}

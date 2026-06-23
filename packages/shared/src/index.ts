@@ -81,6 +81,18 @@ export interface AgentResult {
   toolCalls?: ToolCall[];
   handoff?: boolean;
   handoffReason?: string;
+  intent?: string;
+  sentiment?: string;
+  urgency?: string;
+  actionsTaken?: string[];
+  stages?: AgentStageLog[];
+}
+
+export interface AgentStageLog {
+  stage: string;
+  input?: Record<string, unknown>;
+  output?: Record<string, unknown>;
+  durationMs?: number;
 }
 
 export interface WidgetThemeConfig {

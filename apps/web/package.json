@@ -12,6 +12,7 @@
   "dependencies": {
     "@agenttoruk/agent-engine": "*",
     "@agenttoruk/database": "*",
+    "@agenttoruk/rag": "*",
     "@agenttoruk/shared": "*",
     "bcryptjs": "^3.0.3",
     "lucide-react": "^0.469.0",

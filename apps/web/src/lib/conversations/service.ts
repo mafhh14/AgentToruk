@@ -5,7 +5,7 @@ import type {
 } from "@agenttoruk/database";
 import { prisma } from "@agenttoruk/database";
 import type { ChatMessage } from "@agenttoruk/shared";
-import { AgentEngine } from "@agenttoruk/agent-engine";
+import { runAgentForMessage } from "@/lib/agent/runner";
 
 export function mapMessageRoleToChat(role: MessageRole): ChatMessage["role"] {
   switch (role) {
@@ -196,6 +196,8 @@ export async function processUserMessage(input: {
   let assistantContent: string;
   let confidence: number | undefined;
   let handoff = false;
+  let messageMetadata: Record<string, unknown> | undefined;
+  let messageSources: Prisma.InputJsonValue | undefined;
 
   if (conversation.status === "ESCALATED") {
     assistantContent =
@@ -207,10 +209,28 @@ export async function processUserMessage(input: {
       conversation.id,
       conversation.messages,
       input.content,
+      {
+        visitorEmail: conversation.visitorEmail ?? undefined,
+        visitorName: conversation.visitorName ?? undefined,
+      },
     );
     assistantContent = agentResult.response;
     confidence = agentResult.confidence;
     handoff = agentResult.handoff ?? false;
+    messageMetadata = {
+      intent: agentResult.intent,
+      sentiment: agentResult.sentiment,
+      urgency: agentResult.urgency,
+      actionsTaken: agentResult.actionsTaken,
+      handoffReason: agentResult.handoffReason,
+    };
+    if (agentResult.sources?.length) {
+      messageSources = agentResult.sources.map((s) => ({
+        documentName: s.documentName,
+        content: s.content.slice(0, 200),
+        score: s.score,
+      }));
+    }
 
     if (handoff) {
       await prisma.conversation.update({
@@ -226,6 +246,8 @@ export async function processUserMessage(input: {
       role: "ASSISTANT",
       content: assistantContent,
       confidence,
+      sources: messageSources,
+      metadata: messageMetadata as Prisma.InputJsonValue,
     },
   });
 
@@ -279,23 +301,16 @@ async function generateAgentResponse(
   conversationId: string,
   history: { role: MessageRole; content: string }[],
   userMessage: string,
+  visitor?: { visitorEmail?: string; visitorName?: string },
 ) {
   const config = await prisma.agentConfig.findUnique({
     where: { organizationId },
   });
 
-  const systemPrompt =
-    config?.personality ??
-    "You are a helpful customer support agent. Be concise and professional.";
-
-  const businessContext = config?.businessDescription
-    ? `\n\nBusiness context: ${config.businessDescription}`
-    : "";
-
-  const llmProvider =
-    config?.llmProvider === "GEMINI" ? "gemini" : ("openai" as const);
   const openaiApiKey = process.env.OPENAI_API_KEY;
   const geminiApiKey = process.env.GEMINI_API_KEY;
+  const llmProvider =
+    config?.llmProvider === "GEMINI" ? "gemini" : ("openai" as const);
 
   const hasApiKey =
     llmProvider === "openai" ? !!openaiApiKey : !!geminiApiKey;
@@ -307,51 +322,27 @@ async function generateAgentResponse(
         "Thanks for your message. Our team will review it and get back to you soon.",
       confidence: 0.5,
       handoff: false,
+      intent: "general",
+      sentiment: "neutral",
+      urgency: "low",
+      actionsTaken: [] as string[],
     };
   }
 
   try {
-    const engine = new AgentEngine({
-      llmProvider,
-      llmModel: config?.llmModel ?? "gpt-4o-mini",
-      ragProvider:
-        config?.ragProvider === "GEMINI_FILE_SEARCH"
-          ? "gemini_file_search"
-          : "pgvector",
-      openaiApiKey,
-      geminiApiKey,
-      systemPrompt: systemPrompt + businessContext,
-      confidenceThreshold: config?.confidenceThreshold ?? 0.7,
-    });
-
     const chatHistory: ChatMessage[] = history.map((m) => ({
       role: mapMessageRoleToChat(m.role),
       content: m.content,
     }));
 
-    const result = await engine.processMessage(
-      {
-        organizationId,
-        conversationId,
-        messages: chatHistory,
-      },
+    return await runAgentForMessage({
+      organizationId,
+      conversationId,
+      messages: chatHistory,
       userMessage,
-    );
-
-    await prisma.agentLog.create({
-      data: {
-        organizationId,
-        conversationId,
-        stage: "generate_response",
-        output: {
-          confidence: result.confidence,
-          handoff: result.handoff,
-        },
-        confidence: result.confidence,
-      },
+      visitorEmail: visitor?.visitorEmail,
+      visitorName: visitor?.visitorName,
     });
-
-    return result;
   } catch (error) {
     console.error("[agent]", error);
     return {
@@ -360,6 +351,11 @@ async function generateAgentResponse(
         "I'm having trouble processing your request. Please try again or talk to a human agent.",
       confidence: 0.3,
       handoff: true,
+      handoffReason: "Agent processing error",
+      intent: "general",
+      sentiment: "neutral",
+      urgency: "low",
+      actionsTaken: [] as string[],
     };
   }
 }

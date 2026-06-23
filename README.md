@@ -92,17 +92,30 @@ agenttoruk/
 
 ## Roadmap
 
-- [x] Phase 0 — Monorepo scaffold, schema, admin shell, widget stub
-- [x] Phase 2 — Authentication + RBAC
-- [x] Phase 5 — Conversations API + history
-- [x] Phase 6 — Agent orchestrator (intent, tools, guardrails)
-- [x] Phase 7 — RAG ingest + search
-- [x] Phase 9 — Ticketing module (full UI)
-- [x] Phase 10 — Human handoff + Socket.io realtime
-- [ ] Phase 11 — Widget theme editor
-- [ ] Phase 7 — RAG ingestion + search
-- [ ] Phase 9 — Ticketing module
-- [ ] Phase 10 — Human handoff + realtime
+### Shipped
+
+| Phase | Milestone | Release |
+|-------|-----------|---------|
+| **0** | Monorepo scaffold, schema, admin shell, widget stub | `v0.1.0` |
+| **2** | Authentication + RBAC | `v0.2.0` |
+| **6** | Agent orchestrator + OpenAI/Gemini | `v0.4.0` |
+| **7** | RAG ingestion + search (pgvector) | `v0.5.0` |
+| **9** | Ticketing module | `v0.6.0` |
+| **10** | Human handoff + Socket.io realtime | `v0.7.0` |
+
+Also delivered between phases: **conversations API + widget wiring** (`v0.3.0`).
+
+### Upcoming
+
+| Phase | Milestone |
+|-------|-----------|
+| **11** | Widget theme editor (visual customization in admin) |
+| **12** | Gemini File Search RAG adapter (MySQL-friendly vector strategy) |
+| **13** | Analytics dashboard + CSAT |
+| **14** | Workflow automation |
+| **15** | Public API, webhooks, and integrations |
+
+See [CHANGELOG.md](CHANGELOG.md) for release notes.
 
 ## Contributing
 

@@ -10,7 +10,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@agenttoruk/shared": "*"
+    "@agenttoruk/realtime": "*",
+    "@agenttoruk/shared": "*",
+    "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
     "typescript": "^5.7.2",

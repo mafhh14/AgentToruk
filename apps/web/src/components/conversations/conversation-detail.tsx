@@ -8,11 +8,12 @@ import {
   roleLabel,
   statusBadgeClass,
 } from "@/lib/conversations/format";
+import { useRealtime } from "@/hooks/use-realtime";
 import { hasPermission } from "@/lib/rbac";
-import { Loader2 } from "lucide-react";
+import { Loader2, UserCheck } from "lucide-react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 
 interface Message {
   id: string;
@@ -27,6 +28,7 @@ interface Message {
     urgency?: string;
     actionsTaken?: string[];
     handoffReason?: string;
+    authorId?: string;
   } | null;
 }
 
@@ -36,6 +38,7 @@ interface ConversationDetail {
   visitorName: string | null;
   visitorEmail: string | null;
   visitorId: string | null;
+  assignedUserId: string | null;
   summary: string | null;
   messages: Message[];
   createdAt: string;
@@ -55,6 +58,10 @@ export function ConversationDetailView({
   const [reply, setReply] = useState("");
   const [sending, setSending] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [claiming, setClaiming] = useState(false);
+  const [visitorTyping, setVisitorTyping] = useState(false);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const messageIdsRef = useRef(new Set<string>());
 
   const canWrite =
     session?.user?.role &&
@@ -67,20 +74,70 @@ export function ConversationDetailView({
       if (res.ok) {
         const data = (await res.json()) as { conversation: ConversationDetail };
         setConversation(data.conversation);
+        messageIdsRef.current = new Set(
+          data.conversation.messages.map((m) => m.id),
+        );
       }
     } finally {
       setLoading(false);
     }
   }, [conversationId]);
 
+  const { emitTyping } = useRealtime({
+    enabled: !!conversation && conversation.status !== "CLOSED",
+    onMessage: (msg) => {
+      if (msg.conversationId !== conversationId) return;
+      if (messageIdsRef.current.has(msg.id)) return;
+      messageIdsRef.current.add(msg.id);
+
+      setConversation((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          messages: [
+            ...prev.messages,
+            {
+              id: msg.id,
+              role: msg.role as MessageRole,
+              content: msg.content,
+              createdAt: msg.createdAt,
+            },
+          ],
+        };
+      });
+    },
+    onTyping: (payload) => {
+      if (payload.conversationId !== conversationId) return;
+      if (payload.role !== "visitor") return;
+      setVisitorTyping(payload.isTyping);
+    },
+    onClaimed: load,
+  });
+
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    };
+  }, []);
+
+  function handleReplyChange(value: string) {
+    setReply(value);
+    emitTyping(conversationId, true);
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      emitTyping(conversationId, false);
+    }, 1500);
+  }
 
   async function handleReply(e: FormEvent) {
     e.preventDefault();
     if (!reply.trim()) return;
     setSending(true);
+    emitTyping(conversationId, false);
     try {
       const res = await fetch(
         `/api/conversations/${conversationId}/messages`,
@@ -91,8 +148,16 @@ export function ConversationDetailView({
         },
       );
       if (res.ok) {
+        const data = (await res.json()) as { message: Message };
+        messageIdsRef.current.add(data.message.id);
         setReply("");
-        await load();
+        setConversation((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            messages: [...prev.messages, data.message],
+          };
+        });
       }
     } finally {
       setSending(false);
@@ -110,6 +175,18 @@ export function ConversationDetailView({
       if (res.ok) await load();
     } finally {
       setUpdating(false);
+    }
+  }
+
+  async function claimConversation() {
+    setClaiming(true);
+    try {
+      const res = await fetch(`/api/conversations/${conversationId}/claim`, {
+        method: "POST",
+      });
+      if (res.ok) await load();
+    } finally {
+      setClaiming(false);
     }
   }
 
@@ -135,6 +212,11 @@ export function ConversationDetailView({
     );
   }
 
+  const isEscalated = conversation.status === "ESCALATED";
+  const isAssignedToMe =
+    conversation.assignedUserId === session?.user?.id;
+  const needsClaim = isEscalated && !conversation.assignedUserId;
+
   return (
     <div>
       <div className="mb-4">
@@ -158,6 +240,17 @@ export function ConversationDetailView({
         action={
           canWrite ? (
             <div className="flex flex-wrap gap-2">
+              {needsClaim && (
+                <button
+                  type="button"
+                  disabled={claiming}
+                  onClick={claimConversation}
+                  className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  <UserCheck className="h-4 w-4" />
+                  {claiming ? "Claiming..." : "Take over chat"}
+                </button>
+              )}
               {conversation.status !== "ESCALATED" && (
                 <button
                   type="button"
@@ -193,13 +286,23 @@ export function ConversationDetailView({
         }
       />
 
-      <div className="mb-4">
+      <div className="mb-4 flex flex-wrap items-center gap-3">
         <span
           className={`rounded-full px-2 py-1 text-xs font-medium ${statusBadgeClass(conversation.status)}`}
         >
           {formatConversationStatus(conversation.status)}
         </span>
-        <span className="ml-3 text-xs text-[var(--muted)]">
+        {isEscalated && isAssignedToMe && (
+          <span className="text-xs text-emerald-600 dark:text-emerald-400">
+            Assigned to you — live chat active
+          </span>
+        )}
+        {isEscalated && conversation.assignedUserId && !isAssignedToMe && (
+          <span className="text-xs text-[var(--muted)]">
+            Assigned to another agent
+          </span>
+        )}
+        <span className="text-xs text-[var(--muted)]">
           Started {formatMessageTime(conversation.createdAt)}
         </span>
       </div>
@@ -238,7 +341,9 @@ export function ConversationDetailView({
                       ? "bg-blue-600 text-white"
                       : msg.role === "HUMAN"
                         ? "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200"
-                        : "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100"
+                        : msg.role === "SYSTEM"
+                          ? "bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
+                          : "bg-slate-100 text-slate-900 dark:bg-slate-800 dark:text-slate-100"
                   }`}
                 >
                   {msg.content}
@@ -261,6 +366,9 @@ export function ConversationDetailView({
               </div>
             ))
           )}
+          {visitorTyping && (
+            <p className="text-xs text-[var(--muted)]">Visitor is typing...</p>
+          )}
         </div>
 
         {canWrite && conversation.status !== "CLOSED" && (
@@ -271,8 +379,12 @@ export function ConversationDetailView({
             <input
               type="text"
               value={reply}
-              onChange={(e) => setReply(e.target.value)}
-              placeholder="Reply as support agent..."
+              onChange={(e) => handleReplyChange(e.target.value)}
+              placeholder={
+                isEscalated
+                  ? "Reply as human agent (live)..."
+                  : "Reply as support agent..."
+              }
               className="flex-1 rounded-lg border border-[var(--border)] bg-transparent px-3 py-2 text-sm outline-none ring-blue-600 focus:ring-2"
             />
             <button

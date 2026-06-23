@@ -4,6 +4,7 @@ import {
   BarChart3,
   BookOpen,
   Bot,
+  Headphones,
   LayoutDashboard,
   LogOut,
   MessageSquare,
@@ -20,6 +21,7 @@ import { formatRole, hasPermission } from "@/lib/rbac";
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: "dashboard:read" as const },
   { href: "/dashboard/conversations", label: "Conversations", icon: MessageSquare, permission: "conversations:read" as const },
+  { href: "/dashboard/handoff", label: "Live handoff", icon: Headphones, permission: "conversations:read" as const },
   { href: "/dashboard/tickets", label: "Tickets", icon: Ticket, permission: "tickets:read" as const },
   { href: "/dashboard/knowledge", label: "Knowledge", icon: BookOpen, permission: "knowledge:read" as const },
   { href: "/dashboard/agent", label: "Agent", icon: Bot, permission: "agent:read" as const },

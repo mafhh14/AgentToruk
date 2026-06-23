@@ -6,6 +6,8 @@ import type {
 import { prisma } from "@agenttoruk/database";
 import type { ChatMessage } from "@agenttoruk/shared";
 import { runAgentForMessage } from "@/lib/agent/runner";
+import { notifyEscalation } from "@/lib/conversations/handoff";
+import { emitNewMessage } from "@/lib/realtime/emit";
 
 export function mapMessageRoleToChat(role: MessageRole): ChatMessage["role"] {
   switch (role) {
@@ -73,6 +75,7 @@ export async function listConversations(
       visitorName: c.visitorName,
       visitorEmail: c.visitorEmail,
       visitorId: c.visitorId,
+      assignedUserId: c.assignedUserId,
       messageCount: c._count.messages,
       lastMessage: c.messages[0]
         ? {
@@ -145,7 +148,7 @@ export async function updateConversation(
 
   if (!existing) return null;
 
-  return prisma.conversation.update({
+  const updated = await prisma.conversation.update({
     where: { id },
     data: {
       ...data,
@@ -160,6 +163,12 @@ export async function updateConversation(
       messages: { orderBy: { createdAt: "asc" } },
     },
   });
+
+  if (data.status === "ESCALATED") {
+    await notifyEscalation(organizationId, id);
+  }
+
+  return updated;
 }
 
 export async function processUserMessage(input: {
@@ -193,51 +202,64 @@ export async function processUserMessage(input: {
     },
   });
 
-  let assistantContent: string;
-  let confidence: number | undefined;
-  let handoff = false;
-  let messageMetadata: Record<string, unknown> | undefined;
-  let messageSources: Prisma.InputJsonValue | undefined;
+  await emitNewMessage(conversation.id, conversation.organizationId, {
+    id: userMessage.id,
+    role: userMessage.role,
+    content: userMessage.content,
+    createdAt: userMessage.createdAt,
+  });
 
   if (conversation.status === "ESCALATED") {
-    assistantContent =
-      "Your conversation has been escalated to our support team. A human agent will respond shortly.";
-    confidence = 1;
-  } else {
-    const agentResult = await generateAgentResponse(
-      conversation.organizationId,
-      conversation.id,
-      conversation.messages,
-      input.content,
-      {
-        visitorEmail: conversation.visitorEmail ?? undefined,
-        visitorName: conversation.visitorName ?? undefined,
-      },
-    );
-    assistantContent = agentResult.response;
-    confidence = agentResult.confidence;
-    handoff = agentResult.handoff ?? false;
-    messageMetadata = {
-      intent: agentResult.intent,
-      sentiment: agentResult.sentiment,
-      urgency: agentResult.urgency,
-      actionsTaken: agentResult.actionsTaken,
-      handoffReason: agentResult.handoffReason,
-    };
-    if (agentResult.sources?.length) {
-      messageSources = agentResult.sources.map((s) => ({
-        documentName: s.documentName,
-        content: s.content.slice(0, 200),
-        score: s.score,
-      }));
-    }
+    await prisma.conversation.update({
+      where: { id: conversation.id },
+      data: { updatedAt: new Date() },
+    });
 
-    if (handoff) {
-      await prisma.conversation.update({
-        where: { id: conversation.id },
-        data: { status: "ESCALATED" },
-      });
-    }
+    return {
+      userMessage,
+      assistantMessage: null,
+      handoff: false,
+      escalated: true,
+    };
+  }
+
+  let handoff = false;
+  let messageSources: Prisma.InputJsonValue | undefined;
+
+  const agentResult = await generateAgentResponse(
+    conversation.organizationId,
+    conversation.id,
+    conversation.messages,
+    input.content,
+    {
+      visitorEmail: conversation.visitorEmail ?? undefined,
+      visitorName: conversation.visitorName ?? undefined,
+    },
+  );
+  const assistantContent = agentResult.response;
+  const confidence = agentResult.confidence;
+  handoff = agentResult.handoff ?? false;
+  const messageMetadata = {
+    intent: agentResult.intent,
+    sentiment: agentResult.sentiment,
+    urgency: agentResult.urgency,
+    actionsTaken: agentResult.actionsTaken,
+    handoffReason: agentResult.handoffReason,
+  };
+  if (agentResult.sources?.length) {
+    messageSources = agentResult.sources.map((s) => ({
+      documentName: s.documentName,
+      content: s.content.slice(0, 200),
+      score: s.score,
+    }));
+  }
+
+  if (handoff) {
+    await prisma.conversation.update({
+      where: { id: conversation.id },
+      data: { status: "ESCALATED" },
+    });
+    await notifyEscalation(conversation.organizationId, conversation.id);
   }
 
   const assistantMessage = await prisma.message.create({
@@ -254,6 +276,13 @@ export async function processUserMessage(input: {
   await prisma.conversation.update({
     where: { id: conversation.id },
     data: { updatedAt: new Date() },
+  });
+
+  await emitNewMessage(conversation.id, conversation.organizationId, {
+    id: assistantMessage.id,
+    role: assistantMessage.role,
+    content: assistantMessage.content,
+    createdAt: assistantMessage.createdAt,
   });
 
   return { userMessage, assistantMessage, handoff };
@@ -276,6 +305,11 @@ export async function addHumanMessage(input: {
     throw new Error("Conversation not found");
   }
 
+  const author = await prisma.user.findUnique({
+    where: { id: input.authorId },
+    select: { name: true, email: true },
+  });
+
   const message = await prisma.message.create({
     data: {
       conversationId: input.conversationId,
@@ -291,6 +325,14 @@ export async function addHumanMessage(input: {
       status: conversation.status === "ESCALATED" ? "ESCALATED" : "ACTIVE",
       updatedAt: new Date(),
     },
+  });
+
+  await emitNewMessage(input.conversationId, input.organizationId, {
+    id: message.id,
+    role: message.role,
+    content: message.content,
+    createdAt: message.createdAt,
+    authorName: author?.name ?? author?.email ?? "Support Agent",
   });
 
   return message;

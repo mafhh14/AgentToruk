@@ -13,6 +13,7 @@
     "@agenttoruk/agent-engine": "*",
     "@agenttoruk/database": "*",
     "@agenttoruk/rag": "*",
+    "@agenttoruk/realtime": "*",
     "@agenttoruk/shared": "*",
     "bcryptjs": "^3.0.3",
     "lucide-react": "^0.469.0",
@@ -20,7 +21,8 @@
     "next-auth": "^4.24.11",
     "pdf-parse": "^2.4.5",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "socket.io-client": "^4.8.1"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

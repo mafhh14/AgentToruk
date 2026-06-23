@@ -2,6 +2,7 @@ import type { AgentContext } from "@agenttoruk/shared";
 import type { ToolExecutionResult, ToolRuntime } from "@agenttoruk/agent-engine";
 import type { TicketPriority } from "@agenttoruk/database";
 import { prisma } from "@agenttoruk/database";
+import { notifyEscalation } from "@/lib/conversations/handoff";
 import { createRagProvider } from "@agenttoruk/rag";
 
 export function createToolRuntime(): ToolRuntime {
@@ -154,6 +155,8 @@ async function escalateToHuman(
         metadata: { reason: String(args.reason ?? "") },
       },
     });
+
+    await notifyEscalation(context.organizationId, context.conversationId);
 
     return {
       success: true,

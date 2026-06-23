@@ -1,4 +1,6 @@
 import type { WidgetThemeConfig } from "@agenttoruk/shared";
+import { REALTIME_EVENTS } from "@agenttoruk/realtime/events";
+import { io, type Socket } from "socket.io-client";
 
 const DEFAULT_THEME: WidgetThemeConfig = {
   welcomeMessage: "Hi! How can I help you today?",
@@ -37,16 +39,24 @@ export class ChatWidget {
   private theme: WidgetThemeConfig = DEFAULT_THEME;
   private orgId: string;
   private apiUrl: string;
+  private realtimeUrl: string;
   private conversationId: string | null = null;
   private visitorId: string;
   private messagesEl: HTMLDivElement | null = null;
   private inputEl: HTMLInputElement | null = null;
   private sendBtn: HTMLButtonElement | null = null;
+  private typingEl: HTMLDivElement | null = null;
   private isSending = false;
+  private isEscalated = false;
+  private socket: Socket | null = null;
+  private messageIds = new Set<string>();
+  private typingTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  constructor(orgId: string, apiUrl: string) {
+  constructor(orgId: string, apiUrl: string, realtimeUrl?: string) {
     this.orgId = orgId;
     this.apiUrl = apiUrl.replace(/\/$/, "");
+    this.realtimeUrl =
+      realtimeUrl?.replace(/\/$/, "") ?? this.apiUrl.replace(/:\d+$/, ":3001");
     this.visitorId = this.getOrCreateVisitorId();
   }
 
@@ -69,6 +79,9 @@ export class ChatWidget {
     this.render();
     await this.ensureConversation();
     await this.loadMessages();
+    if (this.isEscalated) {
+      await this.connectRealtime();
+    }
   }
 
   private async loadTheme(): Promise<void> {
@@ -126,11 +139,21 @@ export class ChatWidget {
 
       if (!res.ok) return;
 
-      const data = (await res.json()) as { messages: WidgetMessage[] };
+      const data = (await res.json()) as {
+        conversation?: { status: string };
+        messages: WidgetMessage[];
+      };
+
+      if (data.conversation?.status === "ESCALATED") {
+        this.isEscalated = true;
+      }
+
       this.messagesEl.innerHTML = "";
+      this.messageIds.clear();
       this.appendWelcome();
 
       for (const msg of data.messages) {
+        this.messageIds.add(msg.id);
         this.renderMessage(msg.content, this.mapRole(msg.role));
       }
     } catch {
@@ -138,8 +161,76 @@ export class ChatWidget {
     }
   }
 
-  private mapRole(role: string): "user" | "agent" {
-    return role === "USER" ? "user" : "agent";
+  private mapRole(role: string): "user" | "agent" | "human" {
+    if (role === "USER") return "user";
+    if (role === "HUMAN") return "human";
+    return "agent";
+  }
+
+  private async connectRealtime(): Promise<void> {
+    if (!this.conversationId || this.socket) return;
+
+    try {
+      const params = new URLSearchParams({
+        organizationId: this.orgId,
+        conversationId: this.conversationId,
+        visitorId: this.visitorId,
+      });
+
+      const res = await fetch(
+        `${this.apiUrl}/api/v1/realtime/token?${params}`,
+      );
+      if (!res.ok) return;
+
+      const data = (await res.json()) as { token: string; url: string };
+      const url = data.url || this.realtimeUrl;
+
+      this.socket = io(url, {
+        auth: { token: data.token },
+        transports: ["websocket", "polling"],
+      });
+
+      this.socket.on(REALTIME_EVENTS.MESSAGE_NEW, (msg: WidgetMessage & { conversationId: string }) => {
+        if (msg.conversationId !== this.conversationId) return;
+        if (this.messageIds.has(msg.id)) return;
+        this.messageIds.add(msg.id);
+
+        if (msg.role === "HUMAN") {
+          this.renderMessage(msg.content, "human");
+        } else if (msg.role === "ASSISTANT" || msg.role === "SYSTEM") {
+          this.renderMessage(msg.content, "agent");
+        }
+      });
+
+      this.socket.on(
+        REALTIME_EVENTS.TYPING,
+        (payload: { conversationId: string; role: string; isTyping: boolean }) => {
+          if (payload.conversationId !== this.conversationId) return;
+          if (payload.role !== "agent" || !this.typingEl) return;
+          this.typingEl.style.display = payload.isTyping ? "block" : "none";
+          if (payload.isTyping) {
+            this.typingEl.textContent = "Agent is typing...";
+          }
+        },
+      );
+
+      this.socket.on(REALTIME_EVENTS.CONVERSATION_CLAIMED, () => {
+        this.renderMessage(
+          "A support agent has joined the chat.",
+          "agent",
+        );
+      });
+    } catch (error) {
+      console.error("[AgentToruk] Realtime connection failed", error);
+    }
+  }
+
+  private emitTyping(isTyping: boolean): void {
+    if (!this.socket || !this.conversationId) return;
+    this.socket.emit(REALTIME_EVENTS.TYPING, {
+      conversationId: this.conversationId,
+      isTyping,
+    });
   }
 
   private getResolvedTheme(): "light" | "dark" {
@@ -235,7 +326,7 @@ export class ChatWidget {
     this.inputEl = root.querySelector("#at-input") as HTMLInputElement;
     this.messagesEl = root.querySelector("#at-messages") as HTMLDivElement;
     const humanBtn = root.querySelector("#at-human") as HTMLButtonElement;
-    const typingEl = root.querySelector("#at-typing") as HTMLDivElement;
+    this.typingEl = root.querySelector("#at-typing") as HTMLDivElement;
 
     this.appendWelcome();
 
@@ -247,31 +338,42 @@ export class ChatWidget {
     launcher.onclick = () => toggle(true);
     close.onclick = () => toggle(false);
 
-    this.sendBtn.onclick = () => this.sendMessage(typingEl);
+    this.sendBtn.onclick = () => this.sendMessage();
     this.inputEl.onkeydown = (e) => {
-      if (e.key === "Enter") this.sendMessage(typingEl);
+      if (e.key === "Enter") this.sendMessage();
+    };
+    this.inputEl.oninput = () => {
+      if (!this.isEscalated) return;
+      this.emitTyping(true);
+      if (this.typingTimeout) clearTimeout(this.typingTimeout);
+      this.typingTimeout = setTimeout(() => this.emitTyping(false), 1500);
     };
 
-    humanBtn.onclick = () => this.escalate(typingEl);
+    humanBtn.onclick = () => this.escalate();
 
     this.container = root;
   }
 
-  private renderMessage(text: string, role: "user" | "agent"): void {
+  private renderMessage(
+    text: string,
+    role: "user" | "agent" | "human",
+  ): void {
     if (!this.messagesEl) return;
     const bubble = document.createElement("div");
+    const isUser = role === "user";
+    const isHuman = role === "human";
     bubble.style.cssText = `
       padding:10px 14px; border-radius:var(--at-radius); max-width:85%;
-      font-size:14px; align-self:${role === "user" ? "flex-end" : "flex-start"};
-      background:${role === "user" ? "var(--at-user-bubble)" : "var(--at-agent-bubble)"};
-      color:${role === "user" ? "white" : "var(--at-text)"};
+      font-size:14px; align-self:${isUser ? "flex-end" : "flex-start"};
+      background:${isUser ? "var(--at-user-bubble)" : isHuman ? "#d1fae5" : "var(--at-agent-bubble)"};
+      color:${isUser ? "white" : isHuman ? "#065f46" : "var(--at-text)"};
     `;
     bubble.textContent = text;
     this.messagesEl.appendChild(bubble);
     this.messagesEl.scrollTop = this.messagesEl.scrollHeight;
   }
 
-  private async sendMessage(typingEl: HTMLDivElement): Promise<void> {
+  private async sendMessage(): Promise<void> {
     if (!this.inputEl || !this.conversationId || this.isSending) return;
 
     const text = this.inputEl.value.trim();
@@ -280,7 +382,12 @@ export class ChatWidget {
     this.isSending = true;
     this.inputEl.value = "";
     this.renderMessage(text, "user");
-    typingEl.style.display = "block";
+    this.emitTyping(false);
+
+    if (!this.isEscalated && this.typingEl) {
+      this.typingEl.style.display = "block";
+      this.typingEl.textContent = "Agent is typing...";
+    }
 
     try {
       const res = await fetch(
@@ -297,9 +404,22 @@ export class ChatWidget {
 
       if (res.ok) {
         const data = (await res.json()) as {
-          assistantMessage: { content: string };
+          assistantMessage?: { id: string; content: string } | null;
+          handoff?: boolean;
+          escalated?: boolean;
         };
-        this.renderMessage(data.assistantMessage.content, "agent");
+
+        if (data.handoff || data.escalated) {
+          this.isEscalated = true;
+          await this.connectRealtime();
+        }
+
+        if (data.assistantMessage?.content) {
+          this.messageIds.add(data.assistantMessage.id ?? `a-${Date.now()}`);
+          this.renderMessage(data.assistantMessage.content, "agent");
+        } else if (this.isEscalated) {
+          // Waiting for human — no auto-reply
+        }
       } else {
         this.renderMessage(
           "Sorry, something went wrong. Please try again.",
@@ -312,16 +432,16 @@ export class ChatWidget {
         "agent",
       );
     } finally {
-      typingEl.style.display = "none";
+      if (this.typingEl) this.typingEl.style.display = "none";
       this.isSending = false;
     }
   }
 
-  private async escalate(typingEl: HTMLDivElement): Promise<void> {
+  private async escalate(): Promise<void> {
     if (!this.conversationId || this.isSending) return;
 
     this.isSending = true;
-    typingEl.style.display = "block";
+    if (this.typingEl) this.typingEl.style.display = "block";
 
     try {
       const res = await fetch(
@@ -337,20 +457,26 @@ export class ChatWidget {
       );
 
       if (res.ok) {
+        this.isEscalated = true;
+        await this.connectRealtime();
+
         const data = (await res.json()) as {
-          message?: { content: string };
+          message?: { id: string; content: string };
         };
         if (data.message?.content) {
+          if (data.message.id) this.messageIds.add(data.message.id);
           this.renderMessage(data.message.content, "agent");
         }
       }
     } finally {
-      typingEl.style.display = "none";
+      if (this.typingEl) this.typingEl.style.display = "none";
       this.isSending = false;
     }
   }
 
   destroy(): void {
+    this.socket?.disconnect();
+    this.socket = null;
     this.container?.remove();
     this.container = null;
   }

@@ -3,7 +3,9 @@ import {
   processUserMessage,
   updateConversation,
 } from "@/lib/conversations/service";
+import { emitNewMessage } from "@/lib/realtime/emit";
 import { jsonWithCors, optionsCors, validateOrganization } from "@/lib/cors";
+import { prisma } from "@agenttoruk/database";
 
 export async function OPTIONS() {
   return optionsCors();
@@ -30,6 +32,11 @@ export async function GET(
   }
 
   return jsonWithCors({
+    conversation: {
+      id: conversation.id,
+      status: conversation.status,
+      assignedUserId: conversation.assignedUserId,
+    },
     messages: conversation.messages.map((m) => ({
       id: m.id,
       role: m.role,
@@ -75,13 +82,34 @@ export async function POST(
         return jsonWithCors({ error: "Not found" }, { status: 404 });
       }
 
-      return jsonWithCors({
-        conversation,
-        message: {
+      const systemMessage = await prisma.message.create({
+        data: {
+          conversationId: params.id,
           role: "SYSTEM",
           content:
             "You've been connected to our support queue. A team member will join shortly.",
         },
+      });
+
+      await emitNewMessage(params.id, organizationId, {
+        id: systemMessage.id,
+        role: systemMessage.role,
+        content: systemMessage.content,
+        createdAt: systemMessage.createdAt,
+      });
+
+      return jsonWithCors({
+        conversation: {
+          id: conversation.id,
+          status: conversation.status,
+        },
+        message: {
+          id: systemMessage.id,
+          role: systemMessage.role,
+          content: systemMessage.content,
+          createdAt: systemMessage.createdAt,
+        },
+        escalated: true,
       });
     }
 
@@ -100,6 +128,7 @@ export async function POST(
         userMessage: result.userMessage,
         assistantMessage: result.assistantMessage,
         handoff: result.handoff,
+        escalated: "escalated" in result ? result.escalated : false,
       },
       { status: 201 },
     );

@@ -10,6 +10,7 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
+    "dev:realtime": "npm run dev -w @agenttoruk/realtime-server",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "db:generate": "npm run generate -w @agenttoruk/database",

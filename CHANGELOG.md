@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-06-23
+
+### Added
+
+- Socket.io realtime server (`apps/realtime`) for live chat during human handoff
+- Live handoff queue page with claim/takeover flow
+- Real-time message delivery between widget and admin agents
+- Typing indicators for visitors and agents
+- Escalated conversations skip AI auto-reply and wait for human agents
+
 ## [0.6.0] - 2026-06-23
 
 ### Added

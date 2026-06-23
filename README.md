@@ -98,7 +98,8 @@ agenttoruk/
 - [x] Phase 6 — Agent orchestrator (intent, tools, guardrails)
 - [x] Phase 7 — RAG ingest + search
 - [x] Phase 9 — Ticketing module (full UI)
-- [ ] Phase 10 — Human handoff + Socket.io realtime
+- [x] Phase 10 — Human handoff + Socket.io realtime
+- [ ] Phase 11 — Widget theme editor
 - [ ] Phase 7 — RAG ingestion + search
 - [ ] Phase 9 — Ticketing module
 - [ ] Phase 10 — Human handoff + realtime

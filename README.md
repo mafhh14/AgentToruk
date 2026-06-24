@@ -103,6 +103,7 @@ agenttoruk/
 | **9** | Ticketing module | `v0.6.0` |
 | **10** | Human handoff + Socket.io realtime | `v0.7.0` |
 | **11** | Widget theme editor | `v0.8.0` |
+| **12** | Gemini File Search RAG adapter | `v0.9.0` |
 
 Also delivered between phases: **conversations API + widget wiring** (`v0.3.0`).
 
@@ -110,7 +111,6 @@ Also delivered between phases: **conversations API + widget wiring** (`v0.3.0`).
 
 | Phase | Milestone |
 |-------|-----------|
-| **12** | Gemini File Search RAG adapter (MySQL-friendly vector strategy) |
 | **13** | Analytics dashboard + CSAT |
 | **14** | Workflow automation |
 | **15** | Public API, webhooks, and integrations |

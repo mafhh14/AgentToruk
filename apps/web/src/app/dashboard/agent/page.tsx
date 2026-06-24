@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/layout/page-header";
+import { AgentRagSettings } from "@/components/agent/agent-rag-settings";
 import { getSession } from "@/lib/session";
 import { prisma } from "@agenttoruk/database";
 import { redirect } from "next/navigation";
@@ -51,7 +52,6 @@ export default async function AgentPage() {
               ["Agent name", config?.name ?? "Support Agent"],
               ["LLM provider", config?.llmProvider ?? "OPENAI"],
               ["Model", config?.llmModel ?? "gpt-4o-mini"],
-              ["RAG provider", config?.ragProvider ?? "PGVECTOR"],
               ["Confidence threshold", String(config?.confidenceThreshold ?? 0.7)],
               ["Tone", config?.tone ?? "professional"],
             ].map(([label, value]) => (
@@ -65,9 +65,14 @@ export default async function AgentPage() {
               </div>
             ))}
           </div>
+          <AgentRagSettings
+            initialRagProvider={config?.ragProvider ?? "PGVECTOR"}
+            initialStoreId={config?.geminiFileSearchStoreId ?? null}
+            geminiApiKeyConfigured={Boolean(process.env.GEMINI_API_KEY)}
+          />
           <p className="mt-4 text-xs text-[var(--muted)]">
-            Editable agent settings UI coming in a future phase. Configure via
-            database or seed for now.
+            Other agent settings remain read-only for now. Configure LLM model via
+            database or seed.
           </p>
         </section>
 

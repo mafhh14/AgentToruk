@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-06-23
+
+### Added
+
+- Gemini File Search RAG provider: per-org store creation, document upload, semantic search, delete
+- Knowledge ingest and agent search respect organization `ragProvider` setting
+- Agent dashboard control to switch between pgvector and Gemini File Search
+- `GEMINI_RAG_MODEL` env var for retrieval query model (default `gemini-2.0-flash`)
+
 ## [0.8.0] - 2026-06-23
 
 ### Added

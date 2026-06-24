@@ -1,17 +1,10 @@
 import { mkdir, unlink, writeFile } from "fs/promises";
 import path from "path";
 import { prisma } from "@agenttoruk/database";
-import { createRagProvider } from "@agenttoruk/rag";
 import { extractTextFromFile, extractTextFromUrl } from "./extract";
+import { getRagProviderForOrganization } from "./rag-provider";
 
 const UPLOAD_DIR = path.join(process.cwd(), "uploads");
-
-function getRagProvider() {
-  return createRagProvider("pgvector", {
-    openaiApiKey: process.env.OPENAI_API_KEY,
-    databaseUrl: process.env.DATABASE_URL,
-  });
-}
 
 export async function listDocuments(organizationId: string) {
   return prisma.knowledgeDocument.findMany({
@@ -57,7 +50,7 @@ export async function ingestFromFile(input: {
       throw new Error("No extractable text in file");
     }
 
-    const rag = getRagProvider();
+    const rag = await getRagProviderForOrganization(input.organizationId);
     await rag.ingest({
       organizationId: input.organizationId,
       documentId: doc.id,
@@ -103,7 +96,7 @@ export async function ingestFromUrl(input: {
   });
 
   try {
-    const rag = getRagProvider();
+    const rag = await getRagProviderForOrganization(input.organizationId);
     await rag.ingest({
       organizationId: input.organizationId,
       documentId: doc.id,
@@ -137,7 +130,7 @@ export async function deleteDocument(
 
   if (!doc) return null;
 
-  const rag = getRagProvider();
+  const rag = await getRagProviderForOrganization(organizationId);
   await rag.delete(documentId, organizationId);
 
   if (doc.filePath) {
@@ -172,7 +165,7 @@ export async function reindexDocument(
     throw new Error("No file or URL to reindex");
   }
 
-  const rag = getRagProvider();
+  const rag = await getRagProviderForOrganization(organizationId);
   await rag.ingest({
     organizationId,
     documentId: doc.id,
@@ -194,6 +187,6 @@ export async function searchKnowledge(
   query: string,
   limit = 5,
 ) {
-  const rag = getRagProvider();
+  const rag = await getRagProviderForOrganization(organizationId);
   return rag.search({ organizationId, query, limit });
 }

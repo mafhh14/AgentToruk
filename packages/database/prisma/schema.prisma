@@ -151,6 +151,7 @@ model AgentConfig {
   llmProvider      LlmProvider @default(OPENAI) @map("llm_provider")
   llmModel         String      @default("gpt-4o-mini") @map("llm_model")
   ragProvider      RagProvider @default(PGVECTOR) @map("rag_provider")
+  geminiFileSearchStoreId String? @map("gemini_file_search_store_id")
   allowedActions   String[]    @default([]) @map("allowed_actions")
   restrictedActions String[]   @default([]) @map("restricted_actions")
   escalationRules  Json?       @map("escalation_rules")

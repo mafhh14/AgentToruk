@@ -15,5 +15,6 @@ export interface RagProvider {
 export interface RagProviderConfig {
   openaiApiKey?: string;
   geminiApiKey?: string;
+  geminiSearchModel?: string;
   databaseUrl?: string;
 }

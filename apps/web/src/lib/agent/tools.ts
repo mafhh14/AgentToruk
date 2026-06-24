@@ -3,7 +3,7 @@ import type { ToolExecutionResult, ToolRuntime } from "@agenttoruk/agent-engine"
 import type { TicketPriority } from "@agenttoruk/database";
 import { prisma } from "@agenttoruk/database";
 import { notifyEscalation } from "@/lib/conversations/handoff";
-import { createRagProvider } from "@agenttoruk/rag";
+import { getRagProviderForOrganization } from "@/lib/knowledge/rag-provider";
 
 export function createToolRuntime(): ToolRuntime {
   return {
@@ -46,20 +46,7 @@ async function searchKnowledgeBase(
   }
 
   try {
-    const config = await prisma.agentConfig.findUnique({
-      where: { organizationId: context.organizationId },
-    });
-
-    const ragProvider =
-      config?.ragProvider === "GEMINI_FILE_SEARCH"
-        ? "gemini_file_search"
-        : "pgvector";
-
-    const rag = createRagProvider(ragProvider, {
-      openaiApiKey: process.env.OPENAI_API_KEY,
-      geminiApiKey: process.env.GEMINI_API_KEY,
-      databaseUrl: process.env.DATABASE_URL,
-    });
+    const rag = await getRagProviderForOrganization(context.organizationId);
 
     const chunks = await rag.search({
       organizationId: context.organizationId,
@@ -79,7 +66,7 @@ async function searchKnowledgeBase(
       output: {
         chunks: [],
         count: 0,
-        note: "Knowledge base search will be available after documents are indexed (Phase 7).",
+        note: "Knowledge base search is unavailable or returned no results.",
       },
     };
   }

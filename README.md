@@ -102,27 +102,23 @@ agenttoruk/
 
 ### Shipped
 
-| Release | Phase | Milestone |
-|---------|-------|-----------|
-| `v0.1.0` | **0** | Monorepo scaffold, schema, admin shell, widget stub |
-| `v0.2.0` | **2** | Authentication + RBAC |
-| `v0.3.0` | **3** | Conversations API + widget wiring |
-| `v0.4.0` | **6** | Agent orchestrator + OpenAI/Gemini |
-| `v0.5.0` | **7** | RAG ingestion + search (pgvector) |
-| `v0.6.0` | **9** | Ticketing module |
-| `v0.7.0` | **10** | Human handoff + Socket.io realtime |
-| `v0.8.0` | **11** | Widget theme editor |
-| `v0.9.0` | **12** | Gemini File Search RAG adapter |
+• `v0.1.0` — **Phase 0** — Monorepo scaffold, schema, admin shell, widget stub  
+• `v0.2.0` — **Phase 2** — Authentication + RBAC  
+• `v0.3.0` — **Phase 3** — Conversations API + widget wiring  
+• `v0.4.0` — **Phase 6** — Agent orchestrator + OpenAI/Gemini  
+• `v0.5.0` — **Phase 7** — RAG ingestion + search (pgvector)  
+• `v0.6.0` — **Phase 9** — Ticketing module  
+• `v0.7.0` — **Phase 10** — Human handoff + Socket.io realtime  
+• `v0.8.0` — **Phase 11** — Widget theme editor  
+• `v0.9.0` — **Phase 12** — Gemini File Search RAG adapter  
 
 Phases **1**, **4**, **5**, and **8** are reserved / not yet scheduled.
 
 ### Upcoming
 
-| Phase | Milestone |
-|-------|-----------|
-| **13** | Analytics dashboard + CSAT |
-| **14** | Workflow automation |
-| **15** | Public API, webhooks, and integrations |
+• **Phase 13** — Analytics dashboard + CSAT  
+• **Phase 14** — Workflow automation  
+• **Phase 15** — Public API, webhooks, and integrations  
 
 See [CHANGELOG.md](CHANGELOG.md) for release notes.
 

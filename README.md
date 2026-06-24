@@ -4,6 +4,14 @@
 
 AgentToruk is an enterprise-grade customer support platform with an AI chat agent, RAG knowledge base, ticketing, human handoff, workflow automation, and integrations.
 
+## Goal
+
+**Give every team an AI support agent they actually own.**
+
+Most support AI is a black box: rented, opaque, and locked to one vendor. AgentToruk is the open-source alternative — self-hostable, provider-flexible, and built for teams who want AI that **understands context**, **takes action**, and **knows when to hand off to a human**.
+
+We’re building this in the open so developers, startups, and enterprises can ship production-grade customer support without surrendering their data, their stack, or their roadmap.
+
 ## Features
 
 - **AI Agent Engine** — intent detection, planning, tools, confidence scoring, handoff
@@ -94,18 +102,19 @@ agenttoruk/
 
 ### Shipped
 
-| Phase | Milestone | Release |
-|-------|-----------|---------|
-| **0** | Monorepo scaffold, schema, admin shell, widget stub | `v0.1.0` |
-| **2** | Authentication + RBAC | `v0.2.0` |
-| **6** | Agent orchestrator + OpenAI/Gemini | `v0.4.0` |
-| **7** | RAG ingestion + search (pgvector) | `v0.5.0` |
-| **9** | Ticketing module | `v0.6.0` |
-| **10** | Human handoff + Socket.io realtime | `v0.7.0` |
-| **11** | Widget theme editor | `v0.8.0` |
-| **12** | Gemini File Search RAG adapter | `v0.9.0` |
+| Release | Phase | Milestone |
+|---------|-------|-----------|
+| `v0.1.0` | **0** | Monorepo scaffold, schema, admin shell, widget stub |
+| `v0.2.0` | **2** | Authentication + RBAC |
+| `v0.3.0` | **3** | Conversations API + widget wiring |
+| `v0.4.0` | **6** | Agent orchestrator + OpenAI/Gemini |
+| `v0.5.0` | **7** | RAG ingestion + search (pgvector) |
+| `v0.6.0` | **9** | Ticketing module |
+| `v0.7.0` | **10** | Human handoff + Socket.io realtime |
+| `v0.8.0` | **11** | Widget theme editor |
+| `v0.9.0` | **12** | Gemini File Search RAG adapter |
 
-Also delivered between phases: **conversations API + widget wiring** (`v0.3.0`).
+Phases **1**, **4**, **5**, and **8** are reserved / not yet scheduled.
 
 ### Upcoming
 

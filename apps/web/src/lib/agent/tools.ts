@@ -19,6 +19,10 @@ export function createToolRuntime(): ToolRuntime {
           return createTicket(context, args);
         case "escalate_to_human":
           return escalateToHuman(context, args);
+        case "lookup_reservation":
+          return lookupReservation(context, args);
+        case "lookup_booking":
+          return lookupBooking(context, args);
         default:
           return {
             success: false,
@@ -164,4 +168,73 @@ function normalizePriority(value: string): TicketPriority {
   const upper = value.toUpperCase();
   if (upper === "LOW" || upper === "HIGH" || upper === "URGENT") return upper;
   return "MEDIUM";
+}
+
+async function lookupReservation(
+  context: AgentContext,
+  args: Record<string, unknown>,
+): Promise<ToolExecutionResult> {
+  const confirmation =
+    String(args.confirmation_number ?? "").trim() ||
+    extractReference(String(args.query ?? ""));
+
+  const reservation = {
+    confirmationNumber: confirmation || "HTL-48291",
+    guestName: context.visitorName ?? "Guest",
+    checkIn: "2026-07-10",
+    checkOut: "2026-07-13",
+    roomType: "Deluxe King",
+    status: "confirmed",
+    source: "mock-pms",
+  };
+
+  return {
+    success: true,
+    toolName: "lookup_reservation",
+    output: {
+      found: true,
+      reservation,
+      note: "Mock PMS data — connect a real PMS in integrations.",
+    },
+  };
+}
+
+async function lookupBooking(
+  context: AgentContext,
+  args: Record<string, unknown>,
+): Promise<ToolExecutionResult> {
+  const reference =
+    String(args.booking_reference ?? "").trim() ||
+    extractReference(String(args.query ?? ""));
+
+  const booking = {
+    reference: reference || "TRV-918273",
+    travelerEmail: context.visitorEmail ?? "traveler@example.com",
+    segments: [
+      {
+        type: "flight",
+        from: "JFK",
+        to: "LHR",
+        departure: "2026-08-15T18:30:00Z",
+        status: "confirmed",
+      },
+    ],
+    status: "confirmed",
+    source: "mock-booking-api",
+  };
+
+  return {
+    success: true,
+    toolName: "lookup_booking",
+    output: {
+      found: true,
+      booking,
+      note: "Mock booking API — connect a real CRS in integrations.",
+    },
+  };
+}
+
+function extractReference(text: string): string | undefined {
+  const match = text.match(/\b([A-Z]{2,6}-?\d{4,8}|\d{6,12})\b/i);
+  return match?.[1];
 }

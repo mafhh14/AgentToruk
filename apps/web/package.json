@@ -12,6 +12,7 @@
   "dependencies": {
     "@agenttoruk/agent-engine": "*",
     "@agenttoruk/database": "*",
+    "@agenttoruk/industry-packs": "*",
     "@agenttoruk/rag": "*",
     "@agenttoruk/realtime": "*",
     "@agenttoruk/shared": "*",

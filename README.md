@@ -21,6 +21,7 @@ We’re building this in the open so developers, startups, and enterprises can s
 - **Human Handoff** — seamless transfer to support agents
 - **Admin Dashboard** — conversations, tickets, analytics, team management
 - **Pluggable providers** — OpenAI or Gemini for LLM; pgvector or Gemini File Search for RAG
+- **Industry packs** — hospitality, travel, and general templates with vertical intents and tools
 
 ## Tech stack
 
@@ -75,6 +76,7 @@ agenttoruk/
 │   ├── shared/              # Shared types and constants
 │   ├── llm/                 # OpenAI + Gemini adapters
 │   ├── rag/                 # pgvector + Gemini File Search adapters
+│   ├── industry-packs/      # Vertical templates (hospitality, travel, …)
 │   └── agent-engine/        # Core AI orchestrator
 ├── docs/                    # Documentation
 └── docker-compose.yml
@@ -111,14 +113,15 @@ agenttoruk/
 • `v0.7.0` — **Phase 10** — Human handoff + Socket.io realtime  
 • `v0.8.0` — **Phase 11** — Widget theme editor  
 • `v0.9.0` — **Phase 12** — Gemini File Search RAG adapter  
+• `v1.0.0` — **Phases 13–18** — Analytics, workflows list, API keys, industry packs (hospitality & travel)  
 
 Phases **1**, **4**, **5**, and **8** are reserved / not yet scheduled.
 
 ### Upcoming
 
-• **Phase 13** — Analytics dashboard + CSAT  
-• **Phase 14** — Workflow automation  
-• **Phase 15** — Public API, webhooks, and integrations  
+• **Phase 19** — Community industry pack contributions guide  
+• **Phase 20** — Live integration connectors (PMS, booking APIs)  
+• **Phase 21** — Workflow rule editor + runtime execution  
 
 See [CHANGELOG.md](CHANGELOG.md) for release notes.
 

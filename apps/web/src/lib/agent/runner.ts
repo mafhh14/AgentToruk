@@ -4,6 +4,7 @@ import {
   type OrchestratorLogSink,
 } from "@agenttoruk/agent-engine";
 import { prisma } from "@agenttoruk/database";
+import { getIndustryPack } from "@agenttoruk/industry-packs";
 import { createToolRuntime } from "./tools";
 
 export async function runAgentForMessage(input: {
@@ -14,9 +15,19 @@ export async function runAgentForMessage(input: {
   visitorEmail?: string;
   visitorName?: string;
 }) {
-  const config = await prisma.agentConfig.findUnique({
-    where: { organizationId: input.organizationId },
-  });
+  const [config, org] = await Promise.all([
+    prisma.agentConfig.findUnique({
+      where: { organizationId: input.organizationId },
+    }),
+    prisma.organization.findUnique({
+      where: { id: input.organizationId },
+      select: { industryPackId: true },
+    }),
+  ]);
+
+  const pack =
+    getIndustryPack(org?.industryPackId ?? "general-support") ??
+    getIndustryPack("general-support")!;
 
   const logSink: OrchestratorLogSink = {
     async log(stage, data, durationMs) {
@@ -33,12 +44,15 @@ export async function runAgentForMessage(input: {
     },
   };
 
-  const personality = config?.personality ??
-    "You are a helpful, professional customer support agent.";
+  const personality =
+    config?.personality ?? pack.personality;
 
   const businessContext = config?.businessDescription
     ? `\n\nAbout the business: ${config.businessDescription}`
     : "";
+
+  const allowedActions =
+    config?.allowedActions?.length ? config.allowedActions : pack.allowedActions;
 
   const orchestrator = new AgentOrchestrator({
     llmProvider: config?.llmProvider === "GEMINI" ? "gemini" : "openai",
@@ -51,13 +65,19 @@ export async function runAgentForMessage(input: {
     geminiApiKey: process.env.GEMINI_API_KEY,
     systemPrompt: personality + businessContext,
     agentName: config?.name ?? "Support Agent",
-    tone: config?.tone ?? "professional",
+    tone: config?.tone ?? pack.tone,
     fallbackMessage:
       config?.fallbackMessage ??
       "Thanks for your message. Our team will review it and get back to you soon.",
     confidenceThreshold: config?.confidenceThreshold ?? 0.7,
-    allowedActions: config?.allowedActions ?? [],
+    allowedActions,
     restrictedActions: config?.restrictedActions ?? [],
+    industryIntents: pack.intents,
+    intentPromptAddon: pack.intentPromptAddon,
+    industryPlan: {
+      ticketIntents: pack.ticketIntents,
+      lookupIntentTools: pack.lookupIntentTools,
+    },
     toolRuntime: createToolRuntime(),
     logSink,
   });

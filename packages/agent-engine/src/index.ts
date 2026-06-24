@@ -1,6 +1,7 @@
 export type {
   AgentPlan,
   GuardrailResult,
+  IndustryPlanContext,
   IntentAnalysis,
   IntentCategory,
   OrchestratorLogSink,

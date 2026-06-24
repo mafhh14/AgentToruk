@@ -70,6 +70,14 @@ enum ThemeMode {
   AUTO
 }
 
+enum Industry {
+  GENERAL
+  HOSPITALITY
+  TRAVEL
+  ECOMMERCE
+  SAAS
+}
+
 enum MemoryType {
   SHORT_TERM
   LONG_TERM
@@ -87,11 +95,14 @@ enum WebhookEvent {
 // ─── Organization & Users ────────────────────────────────────────────────────
 
 model Organization {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id               String   @id @default(cuid())
+  name             String
+  slug             String   @unique
+  industry         Industry @default(GENERAL)
+  industryPackId   String   @default("general-support") @map("industry_pack_id")
+  integrationConfig Json?   @map("integration_config")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
 
   memberships       Membership[]
   agentConfig       AgentConfig?

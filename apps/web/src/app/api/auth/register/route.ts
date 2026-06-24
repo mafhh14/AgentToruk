@@ -69,7 +69,7 @@ export async function POST(request: Request) {
       return { organization, user };
     });
 
-    await bootstrapOrganization(result.organization.id);
+    await bootstrapOrganization(result.organization.id, result.user.id);
 
     await prisma.auditEvent.create({
       data: {

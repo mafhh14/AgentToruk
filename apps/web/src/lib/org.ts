@@ -1,4 +1,5 @@
 import { prisma } from "@agenttoruk/database";
+import { applyIndustryPack } from "@/lib/industry/service";
 
 export function slugifyOrganizationName(name: string): string {
   const base = name
@@ -12,24 +13,13 @@ export function slugifyOrganizationName(name: string): string {
   return `${base || "org"}-${suffix}`;
 }
 
-export async function bootstrapOrganization(orgId: string): Promise<void> {
-  await prisma.agentConfig.create({
-    data: {
-      organizationId: orgId,
-      name: "Support Agent",
-      personality:
-        "You are a helpful, professional customer support agent. Be concise and empathetic.",
-      tone: "professional",
-      businessDescription: "",
-      fallbackMessage:
-        "I'm not sure about that. Let me connect you with a human agent who can help.",
-    },
-  });
-
-  await prisma.widgetTheme.create({
-    data: {
-      organizationId: orgId,
-    },
+export async function bootstrapOrganization(
+  orgId: string,
+  actorId?: string,
+): Promise<void> {
+  await applyIndustryPack(orgId, "general-support", actorId ?? "system", {
+    seedKnowledge: true,
+    seedWorkflows: true,
   });
 }
 

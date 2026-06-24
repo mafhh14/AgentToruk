@@ -3,6 +3,7 @@ import {
   formatConversationStatus,
   statusBadgeClass,
 } from "@/lib/conversations/format";
+import { getAnalyticsSummary } from "@/lib/analytics/service";
 import {
   getConversationStats,
   listConversations,
@@ -24,10 +25,11 @@ export default async function DashboardPage() {
   if (!session?.user?.organizationId) redirect("/login");
 
   const orgId = session.user.organizationId;
-  const [stats, recent, ticketStats] = await Promise.all([
+  const [stats, recent, ticketStats, analytics] = await Promise.all([
     getConversationStats(orgId),
     listConversations(orgId, { limit: 5 }),
     getTicketStats(orgId),
+    getAnalyticsSummary(orgId),
   ]);
 
   const statCards = [
@@ -51,9 +53,10 @@ export default async function DashboardPage() {
     },
     {
       label: "CSAT score",
-      value: "—",
+      value:
+        analytics.csatAvg != null ? analytics.csatAvg.toFixed(1) : "—",
       icon: Star,
-      change: "Phase 13",
+      change: `${analytics.csatCount} ratings`,
     },
   ];
 

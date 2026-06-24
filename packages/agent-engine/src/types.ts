@@ -9,7 +9,23 @@ export type IntentCategory =
   | "appointment"
   | "complaint"
   | "human_request"
-  | "general";
+  | "general"
+  | "reservation"
+  | "check_in"
+  | "room_service"
+  | "amenities"
+  | "cancellation"
+  | "late_checkout"
+  | "booking_lookup"
+  | "booking_change"
+  | "itinerary"
+  | "baggage"
+  | "visa_docs";
+
+export interface IndustryPlanContext {
+  ticketIntents?: string[];
+  lookupIntentTools?: Record<string, string>;
+}
 
 export type UrgencyLevel = "low" | "medium" | "high";
 export type SentimentLevel = "neutral" | "frustrated" | "angry";

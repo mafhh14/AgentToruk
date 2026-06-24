@@ -1,14 +1,27 @@
-import type { AgentPlan, IntentAnalysis } from "./types";
+import type { AgentPlan, IndustryPlanContext, IntentAnalysis } from "./types";
 import { detectHumanRequest } from "./guardrails";
+
+const DEFAULT_TICKET_INTENTS = [
+  "billing",
+  "refund",
+  "technical",
+  "complaint",
+  "order_status",
+];
 
 export function buildPlan(
   intent: IntentAnalysis,
   userMessage: string,
   allowedActions: string[],
+  industry?: IndustryPlanContext,
 ): AgentPlan {
   const tools: AgentPlan["tools"] = [];
   const isAllowed = (name: string) =>
     allowedActions.length === 0 || allowedActions.includes(name);
+
+  const ticketIntents = industry?.ticketIntents?.length
+    ? industry.ticketIntents
+    : DEFAULT_TICKET_INTENTS;
 
   if (
     (intent.requiresHuman ||
@@ -22,6 +35,18 @@ export function buildPlan(
     };
   }
 
+  const lookupTool = industry?.lookupIntentTools?.[intent.intent];
+  if (lookupTool && isAllowed(lookupTool)) {
+    tools.push({
+      name: lookupTool,
+      arguments: {
+        query: userMessage,
+        confirmation_number: extractConfirmationNumber(userMessage),
+        booking_reference: extractConfirmationNumber(userMessage),
+      },
+    });
+  }
+
   if (isAllowed("search_knowledge_base")) {
     tools.push({
       name: "search_knowledge_base",
@@ -29,12 +54,7 @@ export function buildPlan(
     });
   }
 
-  if (
-    ["billing", "refund", "technical", "complaint", "order_status"].includes(
-      intent.intent,
-    ) &&
-    isAllowed("create_ticket")
-  ) {
+  if (ticketIntents.includes(intent.intent) && isAllowed("create_ticket")) {
     tools.push({
       name: "create_ticket",
       arguments: {
@@ -65,4 +85,9 @@ export function buildPlan(
     tools,
     reasoning: `Plan for intent=${intent.intent}, urgency=${intent.urgency}`,
   };
+}
+
+function extractConfirmationNumber(message: string): string | undefined {
+  const match = message.match(/\b([A-Z]{2,6}-?\d{4,8}|\d{6,12})\b/i);
+  return match?.[1];
 }

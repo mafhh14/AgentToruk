@@ -40,4 +40,32 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
       required: ["reason"],
     },
   },
+  {
+    name: "lookup_reservation",
+    description:
+      "Look up a hotel reservation by confirmation number or guest details.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: { type: "string" },
+        confirmation_number: { type: "string" },
+        guest_name: { type: "string" },
+      },
+      required: ["query"],
+    },
+  },
+  {
+    name: "lookup_booking",
+    description:
+      "Look up a travel booking by reference number or traveler email.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: { type: "string" },
+        booking_reference: { type: "string" },
+        email: { type: "string" },
+      },
+      required: ["query"],
+    },
+  },
 ];

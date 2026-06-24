@@ -16,6 +16,7 @@ import { classifyIntent } from "./intent";
 import { buildPlan } from "./planner";
 import type {
   IntentAnalysis,
+  IndustryPlanContext,
   OrchestratorLogSink,
   ToolExecutionResult,
   ToolRuntime,
@@ -36,6 +37,9 @@ export interface OrchestratorConfig {
   restrictedActions: string[];
   toolRuntime?: ToolRuntime;
   logSink?: OrchestratorLogSink;
+  industryIntents?: string[];
+  intentPromptAddon?: string;
+  industryPlan?: IndustryPlanContext;
 }
 
 export class AgentOrchestrator {
@@ -93,6 +97,10 @@ export class AgentOrchestrator {
       this.config.llmModel,
       userMessage,
       context.messages,
+      {
+        extraIntents: this.config.industryIntents,
+        intentPromptAddon: this.config.intentPromptAddon,
+      },
     );
     await logStage("understand", { userMessage }, intent as unknown as Record<string, unknown>, t1);
 
@@ -117,7 +125,12 @@ export class AgentOrchestrator {
     }
 
     const t2 = Date.now();
-    const plan = buildPlan(intent, userMessage, this.getEffectiveAllowedActions());
+    const plan = buildPlan(
+      intent,
+      userMessage,
+      this.getEffectiveAllowedActions(),
+      this.config.industryPlan,
+    );
     await logStage("plan", { intent: intent.intent }, plan as unknown as Record<string, unknown>, t2);
 
     const toolResults: ToolExecutionResult[] = [];

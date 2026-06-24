@@ -64,9 +64,22 @@ export default async function SettingsPage() {
         </section>
 
         <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6">
+          <h2 className="font-semibold">Industry</h2>
+          <p className="mt-2 text-sm text-[var(--muted)]">
+            Switch vertical templates for hospitality, travel, or general support in{" "}
+            <a href="/dashboard/industry" className="text-blue-600 hover:underline">
+              Industry packs
+            </a>
+            .
+          </p>
+        </section>
+
+        <section className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-6">
           <h2 className="font-semibold">API keys</h2>
           <p className="mt-2 text-sm text-[var(--muted)]">
-            Developer API coming in Phase 14.
+            Create API keys via <code className="text-xs">POST /api/api-keys</code>{" "}
+            (admin session required). List keys with{" "}
+            <code className="text-xs">GET /api/api-keys</code>.
           </p>
         </section>
       </div>

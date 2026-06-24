@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-06-24
+
+### Added
+
+- Industry packs package: general support, hospitality, and travel vertical templates
+- Industry onboarding UI at `/dashboard/industry` with one-click pack apply
+- Vertical intents and tools: `lookup_reservation`, `lookup_booking` (mock connectors)
+- Organization `industry`, `industryPackId`, and `integrationConfig` fields
+- Analytics dashboard: AI resolution rate, CSAT average, ticket and KB stats
+- Workflow rules list seeded from industry packs
+- API keys create/list endpoints (`/api/api-keys`)
+
 ## [0.9.0] - 2026-06-23
 
 ### Added
